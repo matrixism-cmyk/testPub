@@ -6,6 +6,7 @@ use native_windows_gui as nwg;
 pub struct Menus {
     file: nwg::Menu,
     pub file_refresh: nwg::MenuItem,
+    pub file_back: nwg::MenuItem,
     file_sep: nwg::MenuSeparator,
     pub file_quit: nwg::MenuItem,
 
@@ -23,7 +24,12 @@ pub struct Menus {
     pub sort_time: nwg::MenuItem,
     pub sort_ext: nwg::MenuItem,
 
+    net: nwg::Menu,
+    pub net_ftp: nwg::MenuItem,
+    pub net_disconnect: nwg::MenuItem,
+
     settings: nwg::Menu,
+    pub settings_add_bookmark: nwg::MenuItem,
     pub settings_bookmarks: nwg::MenuItem,
     pub settings_prefs: nwg::MenuItem,
 
@@ -36,6 +42,7 @@ impl Menus {
         let mut m = Menus {
             file: nwg::Menu::default(),
             file_refresh: nwg::MenuItem::default(),
+            file_back: nwg::MenuItem::default(),
             file_sep: nwg::MenuSeparator::default(),
             file_quit: nwg::MenuItem::default(),
             cmd: nwg::Menu::default(),
@@ -50,7 +57,11 @@ impl Menus {
             sort_size: nwg::MenuItem::default(),
             sort_time: nwg::MenuItem::default(),
             sort_ext: nwg::MenuItem::default(),
+            net: nwg::Menu::default(),
+            net_ftp: nwg::MenuItem::default(),
+            net_disconnect: nwg::MenuItem::default(),
             settings: nwg::Menu::default(),
+            settings_add_bookmark: nwg::MenuItem::default(),
             settings_bookmarks: nwg::MenuItem::default(),
             settings_prefs: nwg::MenuItem::default(),
             help: nwg::Menu::default(),
@@ -59,6 +70,7 @@ impl Menus {
 
         top(window, "파일(&F)", &mut m.file);
         item(&m.file, "새로고침\tCtrl+R", &mut m.file_refresh);
+        item(&m.file, "뒤로 (이전 폴더)", &mut m.file_back);
         sep(&m.file, &mut m.file_sep);
         item(&m.file, "종료\tF10", &mut m.file_quit);
 
@@ -76,8 +88,13 @@ impl Menus {
         item(&m.sort, "수정시각순", &mut m.sort_time);
         item(&m.sort, "확장자순", &mut m.sort_ext);
 
+        top(window, "연결(&N)", &mut m.net);
+        item(&m.net, "FTP 연결...", &mut m.net_ftp);
+        item(&m.net, "연결 끊기", &mut m.net_disconnect);
+
         top(window, "설정(&S)", &mut m.settings);
-        item(&m.settings, "북마크", &mut m.settings_bookmarks);
+        item(&m.settings, "북마크 추가 (현재 폴더)", &mut m.settings_add_bookmark);
+        item(&m.settings, "북마크 열기...", &mut m.settings_bookmarks);
         item(&m.settings, "환경설정", &mut m.settings_prefs);
 
         top(window, "도움말(&H)", &mut m.help);

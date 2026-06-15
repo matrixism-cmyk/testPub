@@ -103,6 +103,78 @@ fn run_prompt(title: &str, label: &str, default: &str) -> Option<String> {
     out
 }
 
+/// 목록에서 하나를 선택. 선택 인덱스 또는 None.
+pub fn choose(title: &str, items: Vec<String>) -> Option<usize> {
+    let title = title.to_string();
+    thread::spawn(move || run_choose(&title, items))
+        .join()
+        .unwrap_or(None)
+}
+
+fn run_choose(title: &str, items: Vec<String>) -> Option<usize> {
+    let _ = nwg::init();
+    set_dialog_font();
+
+    let mut window = nwg::Window::default();
+    let mut listbox = nwg::ListBox::<String>::default();
+    let mut ok = nwg::Button::default();
+    let mut cancel = nwg::Button::default();
+
+    nwg::Window::builder()
+        .size((520, 380))
+        .position((480, 300))
+        .title(title)
+        .flags(nwg::WindowFlags::WINDOW | nwg::WindowFlags::VISIBLE)
+        .build(&mut window)
+        .expect("choose window");
+    nwg::ListBox::builder()
+        .collection(items)
+        .position((12, 12))
+        .size((496, 312))
+        .parent(&window)
+        .build(&mut listbox)
+        .expect("listbox");
+    nwg::Button::builder()
+        .text("이동")
+        .position((336, 332))
+        .size((84, 34))
+        .parent(&window)
+        .build(&mut ok)
+        .expect("ok");
+    nwg::Button::builder()
+        .text("취소")
+        .position((424, 332))
+        .size((84, 34))
+        .parent(&window)
+        .build(&mut cancel)
+        .expect("cancel");
+
+    let listbox = Rc::new(listbox);
+    let result: Rc<RefCell<Option<usize>>> = Rc::new(RefCell::new(None));
+    let (win_h, ok_h, cancel_h, lb_h) =
+        (window.handle, ok.handle, cancel.handle, listbox.handle);
+    let res = result.clone();
+    let lb = listbox.clone();
+    let handler = nwg::full_bind_event_handler(&window.handle, move |evt, _d, handle| {
+        use nwg::Event as E;
+        let pick = || {
+            *res.borrow_mut() = lb.selection();
+            nwg::stop_thread_dispatch();
+        };
+        match evt {
+            E::OnButtonClick if handle == ok_h => pick(),
+            E::OnListBoxDoubleClick if handle == lb_h => pick(),
+            E::OnButtonClick if handle == cancel_h => nwg::stop_thread_dispatch(),
+            E::OnWindowClose if handle == win_h => nwg::stop_thread_dispatch(),
+            _ => {}
+        }
+    });
+    nwg::dispatch_thread_events();
+    nwg::unbind_event_handler(&handler);
+    let out = *result.borrow();
+    out
+}
+
 /// 확인: 값 저장 후 루프 종료
 fn accept(res: &Rc<RefCell<Option<String>>>, input: &Rc<nwg::TextInput>) {
     let text = input.text();

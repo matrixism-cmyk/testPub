@@ -12,9 +12,13 @@ mod fsworker;
 mod menus;
 mod model;
 mod progress;
+mod remote;
 mod state;
 mod ui_funcbar;
 mod ui_panel;
+mod vfs;
+mod vfs_ftp;
+mod vfs_zip;
 mod viewer;
 
 use app::App;

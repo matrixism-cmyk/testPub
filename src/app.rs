@@ -1,11 +1,14 @@
 // 앱 전체 조립 + 수동 레이아웃 + 패널 헬퍼
+use crate::config::Config;
 use crate::menus::Menus;
 use crate::progress::SharedProgress;
 use crate::state::{default_start_dir, Side};
 use crate::ui_funcbar::FuncBar;
 use crate::ui_panel::Panel;
+use crate::vfs::Location;
 use native_windows_gui as nwg;
 use std::cell::{Cell, RefCell};
+use std::path::PathBuf;
 
 /// 애플리케이션 전체 상태
 pub struct App {
@@ -14,16 +17,20 @@ pub struct App {
     pub left: Panel,
     pub right: Panel,
     pub funcbar: FuncBar,
+    pub cmdline: nwg::TextInput,
     pub status: nwg::Label,
     pub active: Cell<Side>,
     pub notice: nwg::Notice,
     pub job: RefCell<Option<SharedProgress>>,
+    pub config: RefCell<Config>,
 }
 
 impl App {
     /// 모든 컨트롤을 만들고 App 을 반환한다.
     pub fn build() -> App {
-        let start = default_start_dir();
+        let config = crate::config::load();
+        let left_start = start_dir(&config.left_dir);
+        let right_start = start_dir(&config.right_dir);
 
         let mut window = nwg::Window::default();
         nwg::Window::builder()
@@ -37,9 +44,16 @@ impl App {
             .expect("main window");
 
         let menus = Menus::build(&window);
-        let left = Panel::build(&window, Side::Left, &start);
-        let right = Panel::build(&window, Side::Right, &start);
+        let left = Panel::build(&window, Side::Left, Location::Local(left_start));
+        let right = Panel::build(&window, Side::Right, Location::Local(right_start));
         let funcbar = FuncBar::build(&window);
+
+        let mut cmdline = nwg::TextInput::default();
+        nwg::TextInput::builder()
+            .text("")
+            .parent(&window)
+            .build(&mut cmdline)
+            .expect("cmdline");
 
         let mut status = nwg::Label::default();
         nwg::Label::builder()
@@ -60,10 +74,12 @@ impl App {
             left,
             right,
             funcbar,
+            cmdline,
             status,
             active: Cell::new(Side::Left),
             notice,
             job: RefCell::new(None),
+            config: RefCell::new(config),
         }
     }
 
@@ -105,7 +121,7 @@ impl App {
         self.status.set_text(&format!(
             "[{}] {}  ▶  {}",
             side,
-            p.cwd().display(),
+            p.location().display(),
             name
         ));
         self.left.update_info();
@@ -119,6 +135,7 @@ impl App {
         let m = 6;
         let status_h = 22;
         let func_h = 30;
+        let cmd_h = 26;
 
         // 상태줄 (맨 아래)
         place(&self.status, 0, h - status_h, w, status_h);
@@ -134,9 +151,13 @@ impl App {
             place(&fbtn.button, x, fb_y, bw, func_h - 2);
         }
 
+        // 명령줄 (함수키 바 위)
+        let cmd_y = fb_y - cmd_h - 2;
+        place_input(&self.cmdline, m, cmd_y, w - 2 * m, cmd_h);
+
         // 패널 영역
         let area_top = m;
-        let area_bottom = fb_y - m;
+        let area_bottom = cmd_y - m;
         let area_h = (area_bottom - area_top).max(0);
         let panel_w = ((w - 3 * m) / 2).max(0);
         self.layout_panel(&self.left, m, area_top, panel_w, area_h);
@@ -167,6 +188,20 @@ where
 fn place_list(list: &nwg::ListView, x: i32, y: i32, w: i32, h: i32) {
     list.set_position(x, y);
     list.set_size(w.max(0) as u32, h.max(0) as u32);
+}
+
+fn place_input(t: &nwg::TextInput, x: i32, y: i32, w: i32, h: i32) {
+    t.set_position(x, y);
+    t.set_size(w.max(0) as u32, h.max(0) as u32);
+}
+
+/// 저장된 경로가 유효하면 그 경로, 아니면 기본 시작 폴더
+fn start_dir(saved: &Option<String>) -> PathBuf {
+    saved
+        .as_ref()
+        .map(PathBuf::from)
+        .filter(|p| p.is_dir())
+        .unwrap_or_else(default_start_dir)
 }
 
 /// set_position/set_size 를 공통으로 호출하기 위한 트레잇

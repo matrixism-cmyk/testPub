@@ -9,7 +9,10 @@ use std::rc::Rc;
 pub fn handle(app: &Rc<App>, evt: nwg::Event, data: &nwg::EventData, handle: nwg::ControlHandle) {
     use nwg::Event as E;
     match evt {
-        E::OnWindowClose if handle == app.window.handle => nwg::stop_thread_dispatch(),
+        E::OnWindowClose if handle == app.window.handle => {
+            crate::config::save_dirs(app);
+            nwg::stop_thread_dispatch();
+        }
         E::OnResize | E::OnWindowMaximize if handle == app.window.handle => app.layout(),
         E::OnListViewFocus => {
             if let Some(s) = side_of(app, handle) {
@@ -31,7 +34,13 @@ pub fn handle(app: &Rc<App>, evt: nwg::Event, data: &nwg::EventData, handle: nwg
         E::OnMenuItemSelected => menu(app, handle),
         E::OnKeyPress => {
             if let nwg::EventData::OnKey(k) = data {
-                keys(app, *k);
+                if handle == app.cmdline.handle {
+                    if *k == 0x0D {
+                        actions::run_cmdline(app);
+                    }
+                } else {
+                    keys(app, *k);
+                }
             }
         }
         _ => {}
@@ -70,9 +79,12 @@ fn keys(app: &Rc<App>, vk: u32) {
 fn menu(app: &Rc<App>, handle: nwg::ControlHandle) {
     let m = &app.menus;
     if handle == m.file_quit.handle {
+        crate::config::save_dirs(app);
         nwg::stop_thread_dispatch();
     } else if handle == m.file_refresh.handle {
         actions::refresh(app);
+    } else if handle == m.file_back.handle {
+        actions::go_back(app);
     } else if handle == m.cmd_view.handle {
         actions::func(app, FuncAction::View);
     } else if handle == m.cmd_edit.handle {
@@ -93,6 +105,12 @@ fn menu(app: &Rc<App>, handle: nwg::ControlHandle) {
         actions::set_sort(app, SortKey::Modified);
     } else if handle == m.sort_ext.handle {
         actions::set_sort(app, SortKey::Ext);
+    } else if handle == m.net_ftp.handle {
+        crate::remote::connect_ftp(app);
+    } else if handle == m.net_disconnect.handle {
+        crate::remote::disconnect(app);
+    } else if handle == m.settings_add_bookmark.handle {
+        crate::config::add_bookmark(app);
     } else if handle == m.settings_bookmarks.handle {
         crate::config::open_bookmarks(app);
     } else if handle == m.settings_prefs.handle {

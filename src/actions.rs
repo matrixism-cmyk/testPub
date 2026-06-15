@@ -21,31 +21,29 @@ pub fn func(app: &Rc<App>, action: FuncAction) {
     }
 }
 
-/// 항목 활성화(Enter/더블클릭): 디렉터리면 진입, 파일이면 기본 앱 실행
+/// 항목 활성화(Enter/더블클릭): 디렉터리·압축이면 진입, 파일이면 기본 앱 실행
 pub fn activate(app: &Rc<App>, side: Side) {
     let p = app.panel(side);
     let entry = match p.focused_entry() {
         Some(e) => e,
         None => return,
     };
-    if entry.is_parent {
-        go_up(app, side);
-    } else if entry.is_dir {
-        let np = p.cwd().join(&entry.name);
-        p.load(&np);
+    let loc = p.location();
+    if let Some(new_loc) = loc.enter(&entry) {
+        p.load(new_loc);
         app.update_status();
-    } else {
-        open_default(&p.cwd().join(&entry.name));
+    } else if !entry.is_dir {
+        if let Some(path) = p.focused_path() {
+            open_default(&path);
+        }
     }
 }
 
-/// 상위 디렉터리로 이동
+/// 상위 위치로 이동
 pub fn go_up(app: &Rc<App>, side: Side) {
     let p = app.panel(side);
-    let cwd = p.cwd();
-    if let Some(parent) = cwd.parent() {
-        let parent = parent.to_path_buf();
-        p.load(&parent);
+    if let Some(parent) = p.location().parent() {
+        p.load(parent);
         app.update_status();
     }
 }
@@ -67,6 +65,30 @@ pub fn set_sort(app: &Rc<App>, key: SortKey) {
 
 /// 활성 패널 새로고침
 pub fn refresh(app: &Rc<App>) {
+    app.active_panel().reload();
+    app.update_status();
+}
+
+/// 히스토리 뒤로 가기
+pub fn go_back(app: &Rc<App>) {
+    app.active_panel().go_back();
+    app.update_status();
+}
+
+/// 명령줄 실행: 활성 폴더에서 `cmd /C <명령>` 수행
+pub fn run_cmdline(app: &Rc<App>) {
+    let text = app.cmdline.text();
+    let cmd = text.trim();
+    if cmd.is_empty() {
+        return;
+    }
+    let mut c = std::process::Command::new("cmd");
+    c.args(["/C", cmd]);
+    if let Some(dir) = app.active_panel().local_dir() {
+        c.current_dir(dir);
+    }
+    let _ = c.spawn();
+    app.cmdline.set_text("");
     app.active_panel().reload();
     app.update_status();
 }
