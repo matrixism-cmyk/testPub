@@ -22,6 +22,15 @@ cargo build --release # 배포용 빌드 (target/release/commander.exe)
 
 Windows 전용입니다. 공통 컨트롤 v6 매니페스트는 `build.rs` 에서 자동 임베드됩니다.
 
+### 인스톨러
+
+[Inno Setup](https://jrsoftware.org/isinfo.php) 으로 설치 파일을 만듭니다. (기본 설치 위치: `C:\Program Files\AnnyeongCommander`)
+
+```sh
+cargo build --release
+ISCC installer\setup.iss     # → installer\AnnyeongCommander-Setup-0.1.0.exe
+```
+
 ## 단축키
 
 | 키 | 동작 |
