@@ -1,4 +1,4 @@
-; 안녕 커맨더 Inno Setup 스크립트
+﻿; 안녕 커맨더 Inno Setup 스크립트
 ; 기본 설치 위치: C:\Program Files\AnnyeongCommander
 ; 컴파일: ISCC.exe installer\setup.iss  (작업 디렉터리 = 프로젝트 루트)
 
@@ -29,12 +29,18 @@ WizardStyle=modern
 OutputDir=.
 OutputBaseFilename=AnnyeongCommander-Setup-{#MyAppVersion}
 
+[Languages]
+Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl"
+
 [Files]
 Source: "..\target\release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion isreadme
+Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\안녕커맨더_사용설명서.docx"; DestDir: "{app}"; Flags: ignoreversion isreadme
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\사용설명서"; Filename: "{app}\안녕커맨더_사용설명서.docx"
 Name: "{group}\{#MyAppName} 제거"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
