@@ -6,3 +6,5 @@ Cargo.lock
 /installer/installer/
 *.docx
 ~$*
+make_manual.ps1
+
