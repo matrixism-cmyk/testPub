@@ -4,3 +4,5 @@ Cargo.lock
 *.pdb
 /installer/*.exe
 /installer/installer/
+*.docx
+~$*
