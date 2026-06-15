@@ -1,0 +1,21 @@
+[package]
+name = "commander"
+version = "0.1.0"
+edition = "2021"
+description = "안녕 커맨더 - 미드나잇 커맨더 스타일 듀얼 패널 파일 매니저"
+
+[dependencies]
+native-windows-gui = "1.0.13"
+chrono = "0.4"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+directories = "5"
+zip = "0.6"
+suppaftp = "6"
+
+[build-dependencies]
+embed-manifest = "1"
+
+[profile.release]
+opt-level = "z"
+lto = true
